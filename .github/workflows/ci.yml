@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install workspace and dev tools
+        run: uv sync --group dev
+      - name: Lint (ruff)
+        run: uv run ruff check common database planner retirement reporter charter tagger tests loadtest
+      - name: Type check shared and pure modules (mypy)
+        run: >
+          uv run mypy common/src/agent_common database/src retirement/simulation.py
+          planner/orchestration.py reporter/metrics.py charter/analysis.py
+          --ignore-missing-imports --python-version 3.12 --explicit-package-bases
+      - name: Unit tests (offline - no AWS)
+        run: uv run pytest --cov=agent_common --cov-report=term-missing
+      - name: Shared package tests
+        working-directory: backend/common
+        run: uv run --group dev pytest -q
+      - name: Load-test harness smoke (mock mode)
+        run: LOAD_MODE=mock uv run python loadtest/run_profile.py --stages 10 --duration 8 --max-error-rate 25
+

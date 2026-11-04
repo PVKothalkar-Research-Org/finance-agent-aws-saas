@@ -1,0 +1,60 @@
+[project]
+name = "backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "finance-agent-aws-saas-database",
+    "finance-agent-aws-saas-common",
+    "boto3>=1.40.29",
+    "langfuse>=3.3.4",
+    "openai-agents>=0.3.0",
+    "pydantic-ai>=1.0.6",
+    "python-dotenv>=1.1.1",
+]
+
+[tool.uv.workspace]
+members = [
+    "database",
+    "common",
+    "api",
+    "scheduler",
+]
+
+[tool.uv.sources]
+finance-agent-aws-saas-database = { workspace = true }
+finance-agent-aws-saas-common = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "locust>=2.31",
+    "openai-agents[litellm]>=0.2.6",
+    "tenacity>=9.1.2",
+    "polygon-api-client>=1.14.0",  # imported by planner/prices.py (planner smoke test)
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = [
+    "integration: needs deployed AWS resources and credentials (run with RUN_INTEGRATION=1)",
+]
+addopts = "-m 'not integration'"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["**/.venv", "**/node_modules"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501", "E402", "UP045", "UP006", "UP035", "UP007"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E701", "E702"]
+"**/tests/**" = ["E701", "E702"]
